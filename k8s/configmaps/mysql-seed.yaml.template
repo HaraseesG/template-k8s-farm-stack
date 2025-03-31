@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-seed
+data:
+  env-seed.sql: |
+$(SEED_SQL)

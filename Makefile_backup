@@ -1,0 +1,51 @@
+# Define variables
+NAMESPACE=k8s-mysql-fastapi-react
+
+# Force Docker to use Minikube's Docker daemon
+export DOCKER_ENV := $(shell minikube docker-env)
+export DOCKER_BUILDKIT := 1
+
+# Automatically configure Minikube's Docker environment
+define SET_DOCKER_ENV
+	eval $(minikube docker-env)
+endef
+
+# Start Minikube
+start:
+	minikube start --driver=docker
+	minikube addons enable ingress
+	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
+	kubectl config set-context --current --namespace=$(NAMESPACE)
+
+# Build images
+build:
+	docker build -t my-backend ./backend
+	docker build -t my-frontend ./frontend
+
+# Apply Kubernetes manifests
+deploy: build
+	kubectl apply -f k8s/secrets.yaml
+	kubectl apply -f k8s/mysql-deployment.yaml
+	kubectl apply -f k8s/backend-deployment.yaml
+	kubectl apply -f k8s/frontend-deployment.yaml
+
+# Expose the frontend service
+expose:
+	minikube service frontend-service --url -n $(NAMESPACE)
+
+restart:
+	kubectl rollout restart deployment backend -n $(NAMESPACE)
+	kubectl rollout restart deployment frontend -n $(NAMESPACE)
+
+# Stop Minikube
+stop:
+	minikube stop
+
+# Delete all Kubernetes resources
+clean:
+	kubectl delete namespace $(NAMESPACE)
+	minikube delete
+
+# Check status
+status:
+	minikube status

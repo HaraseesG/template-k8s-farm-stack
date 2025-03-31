@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: 'my-backend:latest'
+          imagePullPolicy: Never
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: MYSQL_DATABASE
+          ports:
+            - containerPort: 8000
+          workingDir: /app/dev
+          volumeMounts:
+            - mountPath: /app/dev
+              name: backend-volume
+      volumes:
+        - name: backend-volume
+          hostPath:
+            path: '/home/${USER}/working/template_react_app/backend'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 30001
+  type: NodePort

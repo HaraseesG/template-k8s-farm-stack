@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: 'my-frontend:latest'
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /app/dev
+              name: frontend-volume
+      volumes:
+        - name: frontend-volume
+          hostPath:
+            path: '/home/${USER}/working/template_react_app/frontend'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30000
+  type: NodePort
